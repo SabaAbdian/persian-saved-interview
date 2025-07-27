@@ -84,29 +84,3 @@ def save_interview_data(
             f"Interview duration (minutes): {duration:.2f}"
         )
 
-# -----------------------
-# UPLOAD CSV TO GOOGLE DRIVE
-# -----------------------
-def upload_csv_to_drive(dataframe, filename, folder_id):
-    service_account_info = json.loads(st.secrets["GDRIVE_SERVICE_ACCOUNT_JSON"])
-    credentials = service_account.Credentials.from_service_account_info(
-        service_account_info,
-        scopes=["https://www.googleapis.com/auth/drive.file"]
-    )
-
-    service = build("drive", "v3", credentials=credentials)
-
-    csv_buffer = io.StringIO()
-    dataframe.to_csv(csv_buffer, index=False)
-    csv_buffer.seek(0)
-
-    file_metadata = {"name": filename, "parents": [folder_id]}
-    media = MediaIoBaseUpload(csv_buffer, mimetype="text/csv")
-
-    uploaded = service.files().create(
-        body=file_metadata,
-        media_body=media,
-        fields="id"
-    ).execute()
-
-    return uploaded.get("id")
