@@ -7,7 +7,6 @@ from utils import (
     check_password,
     check_if_interview_completed,
     save_interview_data,
-    upload_csv_to_drive,
 )
 
 # Load API library
