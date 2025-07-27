@@ -56,10 +56,15 @@ def check_if_interview_completed(directory, username):
 # UPLOAD FILE TO GOOGLE DRIVE
 # -----------------------
 def upload_to_gdrive(content, filename, mimetype="text/plain", folder_id=None):
+    # ✅ Load credentials from Streamlit secrets
     credentials = service_account.Credentials.from_service_account_info(
-    st.secrets["gdrive_service_account"]
-)
+        dict(st.secrets["gdrive_service_account"])
+    )
     service = build("drive", "v3", credentials=credentials)
+
+    # ✅ Optional: get default folder ID from secrets
+    if folder_id is None:
+        folder_id = st.secrets.get("gdrive_folder_id")
 
     file_metadata = {"name": filename}
     if folder_id:
