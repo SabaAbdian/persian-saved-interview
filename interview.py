@@ -186,4 +186,15 @@ if st.session_state.interview_active:
                     )
                     time.sleep(0.1)
 
-
+                if "uploaded_to_drive" not in st.session_state:
+                    try:
+                        df = pd.DataFrame(st.session_state.messages)
+                        upload_csv_to_drive(
+                            dataframe=df,
+                            filename=f"{st.session_state.username}_interview.csv",
+                            folder_id="1gPqDV5ThM1RU0ieUFFEfw2LGUpa7VEBM"
+                        )
+                        st.success("✅ Transcript uploaded to Google Drive.")
+                        st.session_state.uploaded_to_drive = True
+                    except Exception as e:
+                        st.warning(f"⚠️ Upload to Drive failed: {e}")
