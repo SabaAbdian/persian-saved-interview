@@ -1,4 +1,4 @@
-import streamlit as st
+import streamlit as st 
 import hmac
 import time
 import os
@@ -13,8 +13,6 @@ from googleapiclient.http import MediaIoBaseUpload
 # AUTHENTICATION FUNCTION
 # -----------------------
 def check_password():
-    """Returns 'True' if the user has entered a correct password."""
-
     def login_form():
         with st.form("Credentials"):
             st.text_input("Username", key="username")
@@ -22,14 +20,17 @@ def check_password():
             st.form_submit_button("Log in", on_click=password_entered)
 
     def password_entered():
-        if st.session_state.username in st.secrets.passwords and hmac.compare_digest(
-            st.session_state.password,
-            st.secrets.passwords[st.session_state.username],
+        if (
+            st.session_state.username in st.secrets["passwords"]
+            and hmac.compare_digest(
+                st.session_state["password"],
+                st.secrets["passwords"][st.session_state.username],
+            )
         ):
             st.session_state.password_correct = True
         else:
             st.session_state.password_correct = False
-        del st.session_state.password  # Never store the password
+        del st.session_state["password"]  # Don't keep password in memory
 
     if st.session_state.get("password_correct", False):
         return True, st.session_state.username
@@ -37,16 +38,15 @@ def check_password():
     login_form()
     if "password_correct" in st.session_state:
         st.error("User or password incorrect")
-    return False, st.session_state.username
+    return False, st.session_state.get("username", "")
 
 # -----------------------
 # CHECK IF INTERVIEW COMPLETE
 # -----------------------
 def check_if_interview_completed(directory, username):
-    """Check if interview transcript/time file exists which signals that interview was completed."""
     if username != "testaccount":
         try:
-            with open(os.path.join(directory, f"{username}.txt"), "r") as _:
+            with open(os.path.join(directory, f"{username}.txt"), "r"):
                 return True
         except FileNotFoundError:
             return False
@@ -62,11 +62,11 @@ def save_interview_data(
     file_name_addition_transcript="",
     file_name_addition_time="",
 ):
-    """Write interview transcript and time to disk."""
+    os.makedirs(transcripts_directory, exist_ok=True)
+    os.makedirs(times_directory, exist_ok=True)
+
     with open(
-        os.path.join(
-            transcripts_directory, f"{username}{file_name_addition_transcript}.txt"
-        ),
+        os.path.join(transcripts_directory, f"{username}{file_name_addition_transcript}.txt"),
         "w",
         encoding="utf-8"
     ) as t:
@@ -88,9 +88,11 @@ def save_interview_data(
 # UPLOAD CSV TO GOOGLE DRIVE
 # -----------------------
 def upload_csv_to_drive(dataframe, filename, folder_id):
-    """Uploads a Pandas DataFrame as a CSV file to a Google Drive folder."""
     service_account_info = json.loads(st.secrets["GDRIVE_SERVICE_ACCOUNT_JSON"])
-    credentials = service_account.Credentials.from_service_account_info(service_account_info)
+    credentials = service_account.Credentials.from_service_account_info(
+        service_account_info,
+        scopes=["https://www.googleapis.com/auth/drive.file"]
+    )
 
     service = build("drive", "v3", credentials=credentials)
 
@@ -101,4 +103,10 @@ def upload_csv_to_drive(dataframe, filename, folder_id):
     file_metadata = {"name": filename, "parents": [folder_id]}
     media = MediaIoBaseUpload(csv_buffer, mimetype="text/csv")
 
-    uploaded
+    uploaded = service.files().create(
+        body=file_metadata,
+        media_body=media,
+        fields="id"
+    ).execute()
+
+    return uploaded.get("id")
