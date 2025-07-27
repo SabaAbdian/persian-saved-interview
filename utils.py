@@ -89,3 +89,37 @@ def save_interview_data(
         d.write(
             f"Start time (UTC): {time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(st.session_state.start_time))}\nInterview duration (minutes): {duration:.2f}"
         )
+
+import json
+import io
+import pandas as pd
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaIoBaseUpload
+import streamlit as st
+
+def upload_csv_to_drive(dataframe, filename, folder_id):
+    # Load credentials from Streamlit secrets
+    service_account_info = json.loads(st.secrets["GDRIVE_SERVICE_ACCOUNT_JSON"])
+    credentials = service_account.Credentials.from_service_account_info(service_account_info)
+
+    service = build("drive", "v3", credentials=credentials)
+
+    # Convert DataFrame to CSV bytes
+    csv_buffer = io.StringIO()
+    dataframe.to_csv(csv_buffer, index=False)
+    csv_buffer.seek(0)
+
+    # Prepare file metadata
+    file_metadata = {
+        "name": filename,
+        "parents": [folder_id]
+    }
+    media = MediaIoBaseUpload(csv_buffer, mimetype="text/csv")
+
+    uploaded = service.files().create(
+        body=file_metadata,
+        media_body=media,
+        fields="id"
+    ).execute()
+    return uploaded.get("id")
