@@ -13,14 +13,14 @@ from utils import (
 # Load API library
 if "gpt" in config.MODEL.lower():
     api = "openai"
-    from openai import OpenAI
-    
+    import openai
+    openai.api_key = st.secrets["API_KEY_OPENAI"]
 elif "claude" in config.MODEL.lower():
     api = "anthropic"
     import anthropic
+    client = anthropic.Anthropic(api_key=st.secrets["API_KEY_ANTHROPIC"])
 else:
-    raise ValueError("Model must contain 'gpt' or 'claude'."
-    )
+    raise ValueError("Model must contain 'gpt' or 'claude'.")
 
 # Page config
 st.set_page_config(page_title="Interview", page_icon=config.AVATAR_INTERVIEWER)
@@ -73,28 +73,25 @@ for message in st.session_state.messages[1:]:
         with st.chat_message(message["role"], avatar=config.AVATAR_INTERVIEWER if message["role"] == "assistant" else config.AVATAR_RESPONDENT):
             st.markdown(message["content"])
 
-# Load model
-if api == "openai":
-    client = OpenAI(api_key=st.secrets["API_KEY_OPENAI"])
-    api_kwargs = {"stream": True}
-else:
-    client = anthropic.Anthropic(api_key=st.secrets["API_KEY_ANTHROPIC"])
-    api_kwargs = {"system": config.SYSTEM_PROMPT}
-
-api_kwargs.update({
+# Load model parameters
+api_kwargs = {
     "messages": st.session_state.messages,
     "model": config.MODEL,
     "max_tokens": config.MAX_OUTPUT_TOKENS,
-})
+}
 if config.TEMPERATURE is not None:
     api_kwargs["temperature"] = config.TEMPERATURE
+if api == "openai":
+    api_kwargs["stream"] = True
+else:
+    api_kwargs["system"] = config.SYSTEM_PROMPT
 
 # System message
 if not st.session_state.messages:
     if api == "openai":
         st.session_state.messages.append({"role": "system", "content": config.SYSTEM_PROMPT})
         with st.chat_message("assistant", avatar=config.AVATAR_INTERVIEWER):
-            stream = client.chat.completions.create(**api_kwargs)
+            stream = openai.chat.completions.create(**api_kwargs)
             message_interviewer = st.write_stream(stream)
     else:
         st.session_state.messages.append({"role": "user", "content": "Hi"})
@@ -132,8 +129,9 @@ if st.session_state.interview_active:
         with st.chat_message("assistant", avatar=config.AVATAR_INTERVIEWER):
             message_placeholder = st.empty()
             message_interviewer = ""
+
             if api == "openai":
-                stream = client.chat.completions.create(**api_kwargs)
+                stream = openai.chat.completions.create(**api_kwargs)
                 for message in stream:
                     text_delta = message.choices[0].delta.content
                     if text_delta:
@@ -187,6 +185,7 @@ if st.session_state.interview_active:
                         config.TRANSCRIPTS_DIRECTORY, st.session_state.username
                     )
                     time.sleep(0.1)
+
                 if "uploaded_to_drive" not in st.session_state:
                     try:
                         df = pd.DataFrame(st.session_state.messages)
