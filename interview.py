@@ -288,46 +288,47 @@ if st.session_state.interview_active:
 
             # If code in the message, display the associated closing message instead
             # Loop over all codes
-            for code in config.CLOSING_MESSAGES.keys():
+          # If code in the message, display the associated closing message instead
+for code in config.CLOSING_MESSAGES.keys():
+    if code in message_interviewer:
+        # Store message in list of messages
+        st.session_state.messages.append(
+            {"role": "assistant", "content": message_interviewer}
+        )
 
-                if code in message_interviewer:
-                    # Store message in list of messages
-                    st.session_state.messages.append(
-                        {"role": "assistant", "content": message_interviewer}
-                    )
+        # Set chat to inactive and display closing message
+        st.session_state.interview_active = False
+        closing_message = config.CLOSING_MESSAGES[code]
+        st.markdown(closing_message)
+        st.session_state.messages.append(
+            {"role": "assistant", "content": closing_message}
+        )
 
-                    # Set chat to inactive and display closing message
-                    st.session_state.interview_active = False
-                    closing_message = config.CLOSING_MESSAGES[code]
-                    st.markdown(closing_message)
-                    st.session_state.messages.append(
-                        {"role": "assistant", "content": closing_message}
-                    )
+        # Store final transcript and time
+        final_transcript_stored = False
+        while final_transcript_stored == False:
+            save_interview_data(
+                username=st.session_state.username,
+                transcripts_directory=config.TRANSCRIPTS_DIRECTORY,
+                times_directory=config.TIMES_DIRECTORY,
+            )
+            final_transcript_stored = check_if_interview_completed(
+                config.TRANSCRIPTS_DIRECTORY, st.session_state.username
+            )
+            time.sleep(0.1)
 
-                    # Store final transcript and time
-                    final_transcript_stored = False
-                    while final_transcript_stored == False:
+        # ✅ Upload full interview as CSV to Google Drive
+        try:
+            import pandas as pd
+            df = pd.DataFrame(st.session_state.messages)
+            upload_csv_to_drive(
+                dataframe=df,
+                filename=f"{st.session_state.username}_interview.csv",
+                folder_id="1gPqDV5ThM1RU0ieUFFEfw2LGUpa7VEBM"
+            )
+            st.success("✅ Transcript uploaded to Google Drive.")
+        except Exception as e:
+            st.warning(f"⚠️ Upload to Drive failed: {e}")
 
-                        save_interview_data(
-                            username=st.session_state.username,
-                            transcripts_directory=config.TRANSCRIPTS_DIRECTORY,
-                            times_directory=config.TIMES_DIRECTORY,
-                        )
 
-                        final_transcript_stored = check_if_interview_completed(
-                            config.TRANSCRIPTS_DIRECTORY, st.session_state.username
-                        )
-                        time.sleep(0.1)
 
-# ✅ Upload full interview as CSV to Google Drive
-import pandas as pd
-try:
-    df = pd.DataFrame(st.session_state.messages)
-    upload_csv_to_drive(
-        dataframe=df,
-        filename=f"{st.session_state.username}_interview.csv",
-        folder_id="1gPqDV5ThM1RU0ieUFFEfw2LGUpa7VEBM"  # your actual folder ID
-    )
-    st.success("✅ Transcript uploaded to Google Drive.")
-except Exception as e:
-    st.warning(f"⚠️ Upload to Drive failed: {e}")
