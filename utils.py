@@ -8,6 +8,7 @@ import pandas as pd
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
+from googleapiclient.errors import HttpError
 
 # -----------------------
 # AUTHENTICATION FUNCTION
@@ -56,23 +57,32 @@ def check_if_interview_completed(directory, username):
 # UPLOAD FILE TO GOOGLE DRIVE
 # -----------------------
 def upload_to_gdrive(content, filename, mimetype="text/plain", folder_id=None):
-    # ✅ Load credentials from Streamlit secrets
-    credentials = service_account.Credentials.from_service_account_info(
-        dict(st.secrets["gdrive_service_account"])
-    )
-    service = build("drive", "v3", credentials=credentials)
+    try:
+        credentials = service_account.Credentials.from_service_account_info(
+            dict(st.secrets["gdrive_service_account"])
+        )
+        service = build("drive", "v3", credentials=credentials)
 
-    # ✅ Optional: get default folder ID from secrets
-    if folder_id is None:
-        folder_id = st.secrets.get("gdrive_folder_id")
+        if folder_id is None:
+            folder_id = st.secrets.get("gdrive_folder_id", None)
 
-    file_metadata = {"name": filename}
-    if folder_id:
-        file_metadata["parents"] = [folder_id]
+        file_metadata = {"name": filename}
+        if folder_id:
+            file_metadata["parents"] = [folder_id]
 
-    media = MediaIoBaseUpload(io.BytesIO(content.encode("utf-8")), mimetype=mimetype)
-    file = service.files().create(body=file_metadata, media_body=media, fields="id").execute()
-    return file.get("id")
+        media = MediaIoBaseUpload(io.BytesIO(content.encode("utf-8")), mimetype=mimetype)
+
+        file = service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields="id"
+        ).execute()
+
+        return file.get("id")
+
+    except HttpError as error:
+        st.error(f"❌ Google Drive API error: {error}")
+        st.stop()
 
 # -----------------------
 # SAVE TRANSCRIPT AND TIME FILE
