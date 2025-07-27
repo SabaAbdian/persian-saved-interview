@@ -113,7 +113,7 @@ def upload_csv_to_drive(dataframe, filename, folder_id):
     # Prepare file metadata
     file_metadata = {
         "name": filename,
-        "parents": ["https://drive.google.com/drive/folders/1gPqDV5ThM1RU0ieUFFEfw2LGUpa7VEBM"]
+        "parents": [folder_id]
     }
     media = MediaIoBaseUpload(csv_buffer, mimetype="text/csv")
 
