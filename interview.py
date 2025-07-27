@@ -14,11 +14,13 @@ from utils import (
 if "gpt" in config.MODEL.lower():
     api = "openai"
     from openai import OpenAI
+    
 elif "claude" in config.MODEL.lower():
     api = "anthropic"
     import anthropic
 else:
-    raise ValueError("Model must contain 'gpt' or 'claude'.")
+    raise ValueError("Model must contain 'gpt' or 'claude'."
+    )
 
 # Page config
 st.set_page_config(page_title="Interview", page_icon=config.AVATAR_INTERVIEWER)
@@ -185,7 +187,6 @@ if st.session_state.interview_active:
                         config.TRANSCRIPTS_DIRECTORY, st.session_state.username
                     )
                     time.sleep(0.1)
-
                 if "uploaded_to_drive" not in st.session_state:
                     try:
                         df = pd.DataFrame(st.session_state.messages)
