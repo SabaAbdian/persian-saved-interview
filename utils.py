@@ -57,8 +57,8 @@ def check_if_interview_completed(directory, username):
 # -----------------------
 def upload_to_gdrive(content, filename, mimetype="text/plain", folder_id=None):
     credentials = service_account.Credentials.from_service_account_info(
-        st.secrets["GDRIVE_SERVICE_ACCOUNT_JSON"]
-    )
+    json.loads(st.secrets["GDRIVE_SERVICE_ACCOUNT_JSON"])
+)
     service = build("drive", "v3", credentials=credentials)
 
     file_metadata = {"name": filename}
