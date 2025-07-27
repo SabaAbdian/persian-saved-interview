@@ -14,6 +14,8 @@ from utils import (
 if "gpt" in config.MODEL.lower():
     api = "openai"
     import openai
+    # DEBUG: Check if key is loaded
+    st.write("✅ API key loaded:", "API_KEY_OPENAI" in st.secrets)
     openai.api_key = st.secrets["API_KEY_OPENAI"]
 elif "claude" in config.MODEL.lower():
     api = "anthropic"
