@@ -1,5 +1,7 @@
 import config
 import streamlit as st
+# Page config
+st.set_page_config(page_title="Interview", page_icon=config.AVATAR_INTERVIEWER)
 import time
 import os
 import pandas as pd
@@ -23,8 +25,7 @@ elif "claude" in config.MODEL.lower():
 else:
     raise ValueError("Model must contain 'gpt' or 'claude'.")
 
-# Page config
-st.set_page_config(page_title="Interview", page_icon=config.AVATAR_INTERVIEWER)
+
 
 # RTL styling
 st.markdown("""
