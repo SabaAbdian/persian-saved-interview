@@ -5,6 +5,7 @@ from utils import (
     check_password,
     check_if_interview_completed,
     save_interview_data,
+    upload_csv_to_drive,  
 )
 import os
 import config
@@ -317,3 +318,16 @@ if st.session_state.interview_active:
                             config.TRANSCRIPTS_DIRECTORY, st.session_state.username
                         )
                         time.sleep(0.1)
+
+# ✅ Upload full interview as CSV to Google Drive
+import pandas as pd
+try:
+    df = pd.DataFrame(st.session_state.messages)
+    upload_csv_to_drive(
+        dataframe=df,
+        filename=f"{st.session_state.username}_interview.csv",
+        folder_id="1gPqDV5ThM1RU0ieUFFEfw2LGUpa7VEBM"  # your actual folder ID
+    )
+    st.success("✅ Transcript uploaded to Google Drive.")
+except Exception as e:
+    st.warning(f"⚠️ Upload to Drive failed: {e}")
